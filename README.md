@@ -1,6 +1,10 @@
 # Pong-Pygame-
 Python Project Repository
 
-In progress
+Press "P" to play 
 
-Does not have scoring or restarting
+Press "R" to reset
+
+
+
+Completed 7/2/2022 
