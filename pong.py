@@ -33,6 +33,13 @@ class Ball:
     def wall_collision(self):
         self.dy = -self.dy
 
+    def restart_pos(self):
+        self.posX = win_width//2
+        self.posY = win_height//2
+        self.dx = 0
+        self.dy = 0
+        self.show()
+
 
 class Paddle:
     def __init__(self, win, color, posX, posY, width, height):
@@ -63,6 +70,35 @@ class Paddle:
         elif self.posY + self.height >= win_height:
             self.posY = win_height - self.height
 
+    def restart_pos(self):
+        self.posY = win_height//2 - self.height//2
+        self.state = 'stopped'
+        self.show()
+
+
+class Score:
+    def __init__(self, win, points, posX, posY):
+        self.win = win
+        self.points = points
+        self.posX = posX
+        self.posY = posY
+        self.font = pygame.font.SysFont('monospace', 80, bold=True)
+        self.label = self.font.render(self.points, 0, white)
+        self.show()
+
+    def show(self):
+        self.win.blit(
+            self.label, (self.posX - self.label.get_rect().width // 2, self.posY))
+
+    def increase(self):
+        points = int(self.points) + 1
+        self.points = str(points)
+        self.label = self.font.render(self.points, 0, white)
+
+    def restart(self):
+        self.points = '0'
+        self.label = self.font.render(self.points, 0, white)
+
 
 class CollisionManager:
     def ball_and_paddle1(self, ball, paddle1):
@@ -90,6 +126,12 @@ class CollisionManager:
 
         return False
 
+    def goal_paddle1(self, ball):
+        return ball.posX - ball.radius >= win_width
+
+    def goal_paddle2(self, ball):
+        return ball.posX - ball.radius <= 0
+
 
 pygame.init()
 
@@ -109,6 +151,15 @@ def paint_black():
                      (win_width//2, win_height), 5)
 
 
+def restart():
+    paint_black()
+    score1.restart()
+    score2.restart()
+    ball.restart_pos()
+    paddle1.restart_pos()
+    paddle2.restart_pos()
+
+
 paint_black()
 
 
@@ -118,6 +169,8 @@ ball = Ball(win, white, win_width//2, win_height//2, 15)
 paddle1 = Paddle(win, white, 15, win_height//2 - 60, 20, 120)
 paddle2 = Paddle(win, white, win_width - 35, win_height//2 - 60, 20, 120)
 collision = CollisionManager()
+score1 = Score(win, '0', win_width//4, 15)
+score2 = Score(win, '0', win_width - win_width//4, 15)
 
 playing = False
 
@@ -131,6 +184,10 @@ while True:
             if event.key == pygame.K_p:
                 ball.start_moving()
                 playing = True
+
+            if event.key == pygame.K_r:
+                restart()
+                playing = False
 
             if event.key == pygame.K_w:
                 paddle1.state = 'up'
@@ -173,6 +230,25 @@ while True:
 
         if collision.ball_wall(ball):
             ball.wall_collision()
+
+        if collision.goal_paddle1(ball):
+            paint_black()
+            score1.increase()
+            ball.restart_pos()
+            paddle1.restart_pos()
+            paddle2.restart_pos()
+            playing = False
+
+        if collision.goal_paddle2(ball):
+            paint_black()
+            score2.increase()
+            ball.restart_pos()
+            paddle1.restart_pos()
+            paddle2.restart_pos()
+            playing = False
+
+    score1.show()
+    score2.show()
 
     pygame.display.update()
     pygame.time.Clock().tick(30)
